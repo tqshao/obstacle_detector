@@ -1,0 +1,7 @@
+demo_autoware.launch is created in launch folder, which is derived from demo.launch
+
+"use_sim_time" is set to false
+
+Node "point_cloud_converter" is added to tranform PointCloud2(published by /points_raw) to PointCloud(subscribed by /pcl)
+*Euclidean Cluster publishes /points_raw
+*Obstacle Detector uses /pcl
