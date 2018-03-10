@@ -1,16 +1,33 @@
 <!-- Reusable launch file for obstacle detection -->
 <launch>
-  <arg name="frame_id" doc="frame name" />
-  <arg name="manager" doc="nodelet manager name" />
 
+  <arg name="frame_id" default="velodyne_top_link" />
+  <arg name="manager" default="$(arg frame_id)_nodelet_manager" />
+  
+  <node name="obstacle_paramameters" pkg="obstacle_detector" type="obstacle_parameters.jl" output="screen"/>
+  
+  <param name="use_sim_time" value="true"/>  
+  <node name="scans_demo" pkg="rosbag" type="play" output="screen" args="--clock --loop $(find obstacle_detector)/resources/PCL.bag"/>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_scanner_base" args="0 0  0 1.57079632679 0 0 map robot"/>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="scanner_base_to_front_scanner" args="0 0 0 0 0 0 robot $(arg frame_id)"/>
+
+   <!-- Convert PointCloud2 to PointCloud1 -->
+  <node pkg="point_cloud_converter" name="point_cloud_converter" type="point_cloud_converter_node" >
+    <remap from="points2_in" to="/voxel_grid/output"/>
+    <remap from="points_out" to="/pcl" />
+		<!--
+		<remap from="points2_in" to="velodyne_points"/>
+		<remap from="points_out" to="velodyne_points" />
+		-->
+  </node>
+  
   <node name="$(arg manager)" pkg="nodelet" type="nodelet" args="manager" output="screen">
     <param name="num_worker_threads" value="20"/>
   </node>
 
-  <!--node name="obstacle_paramameters" pkg="obstacle_detector" type="obstacle_parameters.jl" output="screen"/-->
-
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
-  <node  name="voxel_grid" pkg="nodelet" type="nodelet" args="load pcl/VoxelGrid $(arg manager)" output="screen">
+  <node name="voxel_grid" pkg="nodelet" type="nodelet" args="load pcl/VoxelGrid $(arg manager)" output="screen">
     <remap from="~input" to="/lidar_points"/>
     <rosparam>
       filter_field_name: z
@@ -21,21 +38,9 @@
     </rosparam>
   </node>
 
-  <!-- Convert PointCloud2 to PointCloud1 -->
-  <node pkg="point_cloud_converter" name="point_cloud_converter" type="point_cloud_converter_node" >
-    <remap from="points2_in" to="/voxel_grid/output"/>
-    <remap from="points_out" to="/pcl" />
-		<!--
-		<remap from="points2_in" to="velodyne_points"/>
-		<remap from="points_out" to="velodyne_points" />
-		-->
-  </node>
-  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_scanner_base" args="0 0  0 1.57079632679 0 0 map robot"/>
-  <node pkg="tf2_ros" type="static_transform_publisher" name="scanner_base_to_front_scanner" args="0 0 0 0 0 0 robot $(arg frame_id)"/>
-
  <!-- remove scan merger -->
- <node name="scans_merger_worker" pkg="nodelet" type="nodelet" args="load obstacle_detector/ScansMerger $(arg manager)">
-    <param name="active"            value="false"/>
+ <node name="scans_merger" pkg="nodelet" type="nodelet" args="load obstacle_detector/ScansMerger $(arg manager)">
+    <param name="active"            value="true"/>
     <param name="publish_scan"      value="false"/>
     <param name="publish_pcl"       value="true"/>
 
@@ -53,7 +58,7 @@
     <param name="target_frame_id"   value="base_link"/>
   </node>
 
-  <node name="obstacle_extractor_worker" pkg="nodelet" type="nodelet" args="load obstacle_detector/ObstacleExtractor $(arg manager)">
+  <node name="obstacle_extractor" pkg="nodelet" type="nodelet" args="load obstacle_detector/ObstacleExtractor $(arg manager)">
     <param name="active"               value="true"/>
     <param name="publish_scan"      value="false"/>
     <param name="publish_pcl"       value="true"/>
@@ -75,7 +80,7 @@
     <param name="frame_id"             value="world" />
   </node>
 
-  <node name="obstacle_tracker_worker" pkg="nodelet" type="nodelet" args="load obstacle_detector/ObstacleTracker $(arg manager)">
+  <node name="obstacle_tracker" pkg="nodelet" type="nodelet" args="load obstacle_detector/ObstacleTracker $(arg manager)">
     <param name="active"                  value="true"/>
 
     <param name="loop_rate"               value="100.0"/>
@@ -91,7 +96,7 @@
     <remap from="tracked_obstacles" to="obstacles"/>
   </node>
 
-  <node name="obstacle_publisher_worker" pkg="nodelet" type="nodelet" args="load obstacle_detector/ObstaclePublisher $(arg manager)">
+  <node name="obstacle_publisher" pkg="nodelet" type="nodelet" args="load obstacle_detector/ObstaclePublisher $(arg manager)">
     <param name="active"           value="false"/>
     <param name="reset"            value="false"/>
 
