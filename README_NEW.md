@@ -12,9 +12,9 @@ $roslaunch obstacle_detector nodelets_test
 This launch file subscribes PointCloud2 ,and set obstacle rospama.
 
 # Input
-rostopic
-Name | Description
+rostopic | rosmsg
 --- | ---
+/lidar_points| PointCloud2
 
 
 # Output
