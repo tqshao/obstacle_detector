@@ -9,7 +9,7 @@ This obstacle detection algoritms can predict the postion (x,y), velocty (x,y), 
 ```
 $roslaunch obstacle_detector nodelets_test
 ```
-This launch file subscribes PointCloud2 ,and set obstacle rospama.
+This launch file subscribes PointCloud2, and set obstacle rospama.
 
 # Input
 rostopic | rosmsg
